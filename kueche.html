@@ -29,6 +29,9 @@
 
         .product-list { font-size: 1.6rem; color: #334155; margin: 20px 0; font-weight: 500; min-height: 60px; }
         
+        /* Anzeige für den Gesamtpreis auf dem Ticket */
+        .order-total { font-size: 1.2rem; font-weight: bold; color: #1e293b; margin-bottom: 15px; text-align: right; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+
         .btn-done { 
             width: 100%; padding: 15px; background: #22c55e; color: white; border: none; 
             border-radius: 15px; font-size: 1.5rem; font-weight: bold; cursor: pointer;
@@ -55,13 +58,11 @@
             const start = parseInt(ticket.getAttribute('data-start'));
             const timerElement = ticket.querySelector('.timer');
             
-            // 10 Minuten Limit (10 * 60 * 1000 ms)
             const limit = 600000; 
             const diff = now - start;
             const remaining = limit - diff;
 
             if (remaining <= 0) {
-                timerElement.innerText = "00:00";
                 timerElement.classList.add('warning');
                 timerElement.style.fontSize = "1.8rem";
                 timerElement.innerText = "ABGELAUFEN";
@@ -95,12 +96,12 @@
                         </div>
                     </div>
                     <div class="product-list">${o.product}</div>
+                    <div class="order-total">Gesamt: ${o.total || "---"}</div>
                     <button class="btn-done" onclick="done('${id}')">ERLEDIGT ✓</button>
                 </div>`;
         });
     });
 
-    // Jede Sekunde aktualisieren
     setInterval(updateCountdowns, 1000);
 
     window.done = id => db.ref('kitchenOrders/' + id).remove();
