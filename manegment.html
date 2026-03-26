@@ -141,7 +141,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Toast Funktion mit Farbauswahl
     function showToast(text, type = 'success') {
         const toast = document.createElement("div");
         toast.className = "toast-msg";
@@ -219,10 +218,9 @@
     }
 
     function removeItem(id) {
-        if(confirm("Löschen?")) {
-            db.ref('restaurantMenu/' + id).remove();
-            showToast("🗑️ Produkt gelöscht", "danger");
-        }
+        // Die Browser-Bestätigung (confirm) wurde hier entfernt.
+        db.ref('restaurantMenu/' + id).remove();
+        showToast("🗑️ Produkt gelöscht", "danger");
     }
 
     function updateTableCount() {
