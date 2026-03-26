@@ -3,94 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Management Dashboard</title>
+    <title>Management</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
         :root {
-            --bg: #f0f2f5; --text: #1c1e21; --accent: #1877f2;
-            --danger: #fa3e3e; --success: #42b72a; --border: #dddfe2; --white: #ffffff;
+            --bg: #f8f9fa; --text: #2d3436; --accent: #0984e3;
+            --danger: #ff7675; --success: #55efc4; --border: #dfe6e9; --white: #ffffff;
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
             background-color: var(--bg); margin: 0; color: var(--text);
         }
 
-        /* Login */
+        /* Login Upgrade */
         #loginOverlay {
-            position: fixed; inset: 0; background: #1c1e21;
+            position: fixed; inset: 0; background: linear-gradient(135deg, #2d3436 0%, #000000 100%);
             display: flex; justify-content: center; align-items: center; z-index: 1000;
         }
-        .login-box { background: var(--white); padding: 30px; border-radius: 8px; width: 300px; text-align: center; box-shadow: 0 12px 28px rgba(0,0,0,0.2); }
-
-        /* Main Container */
-        #mainContent { width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px; display: none; box-sizing: border-box; }
-        
-        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .btn-logout { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 5px 15px; border-radius: 5px; cursor: pointer; font-weight: 600; }
-
-        .card { background: var(--white); border-radius: 8px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        h2 { font-size: 1.1rem; margin: 0 0 15px 0; color: #606770; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        input, select { padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 16px; width: 100%; box-sizing: border-box; }
-        .btn-primary { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
-
-        /* --- DAS RASTER (GRID) FÜR DIE PRODUKTE --- */
-        .category-block { margin-top: 30px; }
-        .category-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; padding-left: 5px; border-left: 5px solid var(--accent); }
-
-        .product-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-            gap: 15px; 
+        .login-box { 
+            background: var(--white); padding: 40px; border-radius: 15px; 
+            width: 320px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); 
         }
+        
+        .pass-wrapper { position: relative; width: 100%; margin-bottom: 20px; }
+        .pass-wrapper input { padding-right: 45px; }
+        .toggle-pass { 
+            position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+            cursor: pointer; font-size: 20px; opacity: 0.6; transition: 0.2s;
+        }
+        .toggle-pass:hover { opacity: 1; }
+
+        /* Layout Upgrade */
+        #mainContent { width: 100%; max-width: 1100px; margin: 0 auto; padding: 30px 15px; display: none; }
+        
+        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .btn-logout { 
+            background: transparent; border: 1.5px solid var(--danger); color: var(--danger); 
+            padding: 8px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.3s;
+        }
+        .btn-logout:hover { background: var(--danger); color: white; }
+
+        /* Schöne Statistik Karten */
+        .stats-grid { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+            gap: 20px; margin-bottom: 35px; 
+        }
+        .stat-card { 
+            background: var(--white); padding: 20px; border-radius: 12px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid var(--accent);
+        }
+        .stat-val { font-size: 1.8rem; font-weight: 800; color: var(--text); display: block; }
+        .stat-label { font-size: 0.85rem; color: #636e72; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
+
+        /* Cards & Inputs */
+        .card { 
+            background: var(--white); border-radius: 12px; padding: 25px; 
+            margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        h2 { font-size: 1rem; margin: 0 0 20px 0; color: #636e72; display: flex; align-items: center; gap: 8px; }
+
+        input, select { 
+            padding: 12px 15px; border: 2px solid var(--border); border-radius: 10px; 
+            font-size: 15px; width: 100%; box-sizing: border-box; outline: none; transition: 0.2s;
+        }
+        input:focus { border-color: var(--accent); }
+        .btn-primary { 
+            background: var(--accent); color: white; border: none; padding: 14px; 
+            border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(9, 132, 227, 0.3); }
+
+        /* Produkt Liste */
+        .category-block { margin-top: 40px; }
+        .category-title { 
+            font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; 
+            padding-bottom: 10px; border-bottom: 2px solid var(--border);
+        }
+
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; }
 
         .product-item { 
-            background: var(--white); 
-            border: 1px solid var(--border); 
-            border-radius: 8px; 
-            padding: 12px; 
-            display: flex; 
-            align-items: center; 
-            gap: 10px;
-            transition: box-shadow 0.2s;
+            background: var(--white); border-radius: 12px; padding: 15px; 
+            display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            border: 1px solid var(--border);
         }
-        .product-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .item-name { flex: 1; border: none; font-size: 16px; font-weight: 600; background: transparent; }
+        
+        .price-box { 
+            display: flex; align-items: center; background: #f1f2f6; 
+            padding: 6px 12px; border-radius: 8px; font-weight: bold;
+            min-width: 105px;
+        }
+        .item-price { 
+            width: 80px; border: none; background: transparent; 
+            font-weight: 800; font-size: 16px; text-align: right; outline: none;
+        }
 
-        .item-name { flex: 1; border: none; font-size: 15px; font-weight: 500; outline: none; background: transparent; }
-        .item-name:focus { color: var(--accent); }
+        .btn-del { 
+            background: #ffeaa7; color: #d63031; border: none; width: 34px; height: 34px; 
+            border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-del:hover { background: var(--danger); color: white; }
 
-        .price-box { display: flex; align-items: center; background: #f5f6f7; padding: 5px 8px; border-radius: 4px; }
-        .item-price { width: 50px; border: none; background: transparent; text-align: right; font-weight: bold; font-size: 14px; outline: none; }
-
-        .btn-del { color: #ccd0d5; border: none; background: none; font-size: 20px; cursor: pointer; line-height: 1; }
-        .btn-del:hover { color: var(--danger); }
-
-        /* Toast Styling */
         .toast-msg {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: white;
-            padding: 12px 25px;
-            border-radius: 50px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            z-index: 9999;
-            font-weight: bold;
-            animation: fadeUp 0.4s ease-out;
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            color: white; padding: 14px 30px; border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2); z-index: 9999; font-weight: bold;
+            animation: slideUp 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
         }
-        @keyframes fadeUp {
-            from { bottom: 0; opacity: 0; }
-            to { bottom: 20px; opacity: 1; }
-        }
+        @keyframes slideUp { from { bottom: -50px; opacity: 0; } to { bottom: 30px; opacity: 1; } }
 
-        /* Mobile Anpassung */
-        @media (max-width: 600px) {
-            .product-grid { grid-template-columns: 1fr; } 
-            #mainContent { padding: 10px; }
+        @media (max-width: 600px) { 
+            .stats-grid { grid-template-columns: 1fr 1fr; } 
+            .product-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -98,38 +126,62 @@
 
 <div id="loginOverlay">
     <div class="login-box">
-        <h3 style="margin-top:0">🔑 Management Login</h3>
-        <input type="password" id="passInput" placeholder="Passwort" onkeydown="if(event.key === 'Enter') checkLogin()">
-        <button class="btn-primary" onclick="checkLogin()" style="margin-top:15px">Einloggen</button>
-        <p id="errorMsg" style="color:var(--danger); display:none; font-size: 13px; margin-top: 10px;">Falsches Passwort!</p>
+        <h2 style="justify-content: center; font-size: 1.5rem; color: var(--text);">🔐 Management</h2>
+        <div class="pass-wrapper">
+            <input type="password" id="passInput" placeholder="Passwort" onkeydown="if(event.key === 'Enter') checkLogin()">
+            <span class="toggle-pass" onclick="togglePassword()">👁️</span>
+        </div>
+        <button class="btn-primary" onclick="checkLogin()" style="width: 100%;">Einloggen</button>
+        <p id="errorMsg" style="color:var(--danger); display:none; font-size: 14px; margin-top: 15px; font-weight: 600;">⚠️ Passwort falsch!</p>
     </div>
 </div>
 
 <div id="mainContent">
     <div class="top-nav">
-        <h1 style="font-size: 22px; margin: 0;">Dashboard</h1>
+        <h1 style="font-size: 26px; font-weight: 800; letter-spacing: -1px;">Dashboard</h1>
         <button class="btn-logout" onclick="location.reload()">Abmelden</button>
     </div>
 
-    <div class="card" style="max-width: 400px;">
-        <h2>🪑 Tische</h2>
-        <div style="display: flex; gap: 10px;">
-            <input type="number" id="tableCountInput" placeholder="Anzahl">
-            <button class="btn-primary" onclick="updateTableCount()" style="width: auto; padding: 0 20px;">Sichern</button>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-val" id="stat-total">0</span>
+            <span class="stat-label">Gesamt</span>
+        </div>
+        <div class="stat-card" style="border-color: #fdcb6e;">
+            <span class="stat-val" id="stat-tables">0</span>
+            <span class="stat-label">Tische</span>
+        </div>
+        <div class="stat-card" style="border-color: #55efc4;">
+            <span class="stat-val" id="stat-g">0</span>
+            <span class="stat-label">Getränke</span>
+        </div>
+        <div class="stat-card" style="border-color: #a29bfe;">
+            <span class="stat-val" id="stat-s">0</span>
+            <span class="stat-label">Speisen</span>
         </div>
     </div>
 
-    <div class="card">
-        <h2>✨ Neues Produkt</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
-            <input type="text" id="itemName" placeholder="Name">
-            <input type="number" id="itemPrice" step="0.10" placeholder="Preis €">
-            <select id="itemCategory">
-                <option value="G">🥤 Getränk</option>
-                <option value="S">🍕 Speise</option>
-                <option value="N">🍰 Nachspeise</option>
-            </select>
-            <button class="btn-primary" onclick="addItem()">Hinzufügen</button>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+        <div class="card">
+            <h2>🪑 Tische verwalten</h2>
+            <div style="display: flex; gap: 10px;">
+                <input type="number" id="tableCountInput" placeholder="Anzahl">
+                <button class="btn-primary" onclick="updateTableCount()" style="width: auto; padding: 0 25px;">Sichern</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>✨ Neues Produkt</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <input type="text" id="itemName" placeholder="Name des Produkts" style="grid-column: span 2;">
+                <input type="text" id="itemPrice" placeholder="Preis (z.B. 3,50)">
+                <select id="itemCategory">
+                    <option value="G">🥤 Getränk</option>
+                    <option value="S">🍕 Speise</option>
+                    <option value="N">🍰 Nachspeise</option>
+                </select>
+                <button class="btn-primary" onclick="addItem()" style="grid-column: span 2;">Produkt speichern</button>
+            </div>
         </div>
     </div>
 
@@ -142,17 +194,27 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    function formatPrice(val) {
+        let n = parseFloat(val.toString().replace(',', '.'));
+        if (isNaN(n)) return "0,00";
+        return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
     function showToast(text, type = 'success') {
         const toast = document.createElement("div");
         toast.className = "toast-msg";
-        toast.style.background = type === 'danger' ? 'var(--danger)' : 'var(--success)';
+        toast.style.background = type === 'danger' ? 'linear-gradient(to right, #ff7675, #d63031)' : 'linear-gradient(to right, #55efc4, #00b894)';
         toast.innerText = text;
         document.body.appendChild(toast);
         setTimeout(() => { 
-            toast.style.opacity = "0"; 
-            toast.style.transition = "0.5s"; 
+            toast.style.opacity = "0"; toast.style.transition = "0.5s"; 
             setTimeout(() => toast.remove(), 500); 
         }, 2500);
+    }
+
+    function togglePassword() {
+        const p = document.getElementById('passInput');
+        p.type = p.type === "password" ? "text" : "password";
     }
 
     function checkLogin() {
@@ -163,24 +225,35 @@
         } else { document.getElementById('errorMsg').style.display = 'block'; }
     }
 
+    function updateStats(menu, tables) {
+        const items = Object.values(menu || {});
+        document.getElementById('stat-total').innerText = items.length;
+        document.getElementById('stat-tables').innerText = tables || 0;
+        document.getElementById('stat-g').innerText = items.filter(i => i.cat === 'G').length;
+        document.getElementById('stat-s').innerText = items.filter(i => i.cat === 'S').length;
+    }
+
     function initApp() {
+        let currentMenu = {};
+        let currentTables = 0;
+
         db.ref('restaurantMenu').on('value', snapshot => {
-            const menu = snapshot.val();
+            currentMenu = snapshot.val() || {};
             const display = document.getElementById('menuDisplay');
             display.innerHTML = "";
-            if(!menu) return;
             
             const cats = { "G": "🥤 Getränke", "S": "🍕 Speisen", "N": "🍰 Nachspeisen" };
             for (let c in cats) {
                 let itemsHtml = "";
-                for(let id in menu) {
-                    if(menu[id].cat === c) {
+                for(let id in currentMenu) {
+                    if(currentMenu[id].cat === c) {
+                        let displayVal = formatPrice(currentMenu[id].price);
                         itemsHtml += `
                             <div class="product-item">
-                                <input class="item-name" value="${menu[id].name}" onchange="updateItem('${id}', 'name', this.value)">
+                                <input class="item-name" value="${currentMenu[id].name}" onchange="updateItem('${id}', 'name', this.value)">
                                 <div class="price-box">
-                                    <input class="item-price" type="number" step="0.01" value="${menu[id].price}" onchange="updateItem('${id}', 'price', this.value)">
-                                    <span style="font-weight:bold; color:#8d949e; font-size:12px">€</span>
+                                    <input class="item-price" type="text" value="${displayVal}" onblur="this.value=formatPrice(this.value)" onchange="updatePrice('${id}', this.value)">
+                                    <span>€</span>
                                 </div>
                                 <button class="btn-del" onclick="removeItem('${id}')">×</button>
                             </div>`;
@@ -194,41 +267,49 @@
                         </div>`;
                 }
             }
+            updateStats(currentMenu, currentTables);
         });
 
         db.ref('settings/tableCount').on('value', snapshot => {
-            if(snapshot.exists()) document.getElementById('tableCountInput').value = snapshot.val();
+            currentTables = snapshot.val() || 0;
+            document.getElementById('tableCountInput').value = currentTables;
+            updateStats(currentMenu, currentTables);
         });
     }
 
     function addItem() {
         const name = document.getElementById('itemName').value;
-        const price = document.getElementById('itemPrice').value || "0.00";
+        let price = document.getElementById('itemPrice').value.replace(',', '.') || "0";
         const cat = document.getElementById('itemCategory').value;
         if (name) {
-            db.ref('restaurantMenu').push({ name, price, cat });
+            db.ref('restaurantMenu').push({ name, price: parseFloat(price).toFixed(2), cat });
             document.getElementById('itemName').value = "";
             document.getElementById('itemPrice').value = "";
-            showToast("✅ Produkt hinzugefügt!", "success");
+            showToast("✅ Produkt erfolgreich erstellt!");
         }
     }
 
     function updateItem(id, field, value) {
-        let u = {}; u[field] = value;
-        db.ref('restaurantMenu/' + id).update(u);
+        db.ref('restaurantMenu/' + id).update({ [field]: value });
+    }
+
+    function updatePrice(id, value) {
+        let cleanVal = parseFloat(value.replace(',', '.')).toFixed(2);
+        if(!isNaN(cleanVal)) {
+            db.ref('restaurantMenu/' + id).update({ price: cleanVal });
+        }
     }
 
     function removeItem(id) {
-        // Die Browser-Bestätigung (confirm) wurde hier entfernt.
         db.ref('restaurantMenu/' + id).remove();
-        showToast("🗑️ Produkt gelöscht", "danger");
+        showToast("🗑️ Produkt entfernt", "danger");
     }
 
     function updateTableCount() {
         const c = document.getElementById('tableCountInput').value;
-        if(c > 0) {
+        if(c >= 0) {
             db.ref('settings').update({ tableCount: c }).then(() => {
-                showToast("🪑 Tischanzahl aktualisiert!", "success");
+                showToast("🪑 Tischanzahl gespeichert!");
             });
         }
     }
