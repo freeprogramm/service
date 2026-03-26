@@ -9,7 +9,7 @@
     <style>
         :root {
             --bg: #f0f2f5; --text: #1c1e21; --accent: #1877f2;
-            --danger: #fa3e3e; --border: #dddfe2; --white: #ffffff;
+            --danger: #fa3e3e; --success: #42b72a; --border: #dddfe2; --white: #ffffff;
         }
 
         body {
@@ -67,9 +67,28 @@
         .btn-del { color: #ccd0d5; border: none; background: none; font-size: 20px; cursor: pointer; line-height: 1; }
         .btn-del:hover { color: var(--danger); }
 
+        /* Toast Styling */
+        .toast-msg {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 9999;
+            font-weight: bold;
+            animation: fadeUp 0.4s ease-out;
+        }
+        @keyframes fadeUp {
+            from { bottom: 0; opacity: 0; }
+            to { bottom: 20px; opacity: 1; }
+        }
+
         /* Mobile Anpassung */
         @media (max-width: 600px) {
-            .product-grid { grid-template-columns: 1fr; } /* Am Handy doch untereinander, aber als saubere Karten */
+            .product-grid { grid-template-columns: 1fr; } 
             #mainContent { padding: 10px; }
         }
     </style>
@@ -121,6 +140,20 @@
     const firebaseConfig = { databaseURL: "https://mein-restaurante-default-rtdb.europe-west1.firebasedatabase.app/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+
+    // Toast Funktion mit Farbauswahl
+    function showToast(text, type = 'success') {
+        const toast = document.createElement("div");
+        toast.className = "toast-msg";
+        toast.style.background = type === 'danger' ? 'var(--danger)' : 'var(--success)';
+        toast.innerText = text;
+        document.body.appendChild(toast);
+        setTimeout(() => { 
+            toast.style.opacity = "0"; 
+            toast.style.transition = "0.5s"; 
+            setTimeout(() => toast.remove(), 500); 
+        }, 2500);
+    }
 
     function checkLogin() {
         if(document.getElementById('passInput').value === MASTER_PASSWORD) {
@@ -176,6 +209,7 @@
             db.ref('restaurantMenu').push({ name, price, cat });
             document.getElementById('itemName').value = "";
             document.getElementById('itemPrice').value = "";
+            showToast("✅ Produkt hinzugefügt!", "success");
         }
     }
 
@@ -185,12 +219,19 @@
     }
 
     function removeItem(id) {
-        if(confirm("Löschen?")) db.ref('restaurantMenu/' + id).remove();
+        if(confirm("Löschen?")) {
+            db.ref('restaurantMenu/' + id).remove();
+            showToast("🗑️ Produkt gelöscht", "danger");
+        }
     }
 
     function updateTableCount() {
         const c = document.getElementById('tableCountInput').value;
-        if(c > 0) db.ref('settings').update({ tableCount: c }).then(() => alert("Tischanzahl gespeichert!"));
+        if(c > 0) {
+            db.ref('settings').update({ tableCount: c }).then(() => {
+                showToast("🪑 Tischanzahl aktualisiert!", "success");
+            });
+        }
     }
 </script>
 </body>
