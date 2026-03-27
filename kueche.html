@@ -19,6 +19,7 @@
             --warn-glass: rgba(254, 243, 199, 0.6);
             --urgent-glass: rgba(254, 226, 226, 0.6);
             --danger: #ef4444;
+            --success: #22c55e;
         }
 
         body { 
@@ -31,105 +32,70 @@
             color: var(--text-main);
         }
 
-        /* Passwort Overlay */
         #authOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
             display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 9999;
         }
-        #authOverlay div.login-box {
-            background: white;
-            padding: 30px; border-radius: 30px;
+
+        .login-box {
+            background: white; padding: 30px; border-radius: 30px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.05);
             text-align: center; border: 1px solid var(--glass-border);
             width: 90%; max-width: 320px;
         }
 
-        #authOverlay input {
+        input {
             padding: 15px; font-size: 1.2rem; border-radius: 15px; border: 1px solid #e2e8f0;
             text-align: center; width: 100%; box-sizing: border-box; outline: none;
             background: #f8fafc; transition: all 0.2s;
         }
 
-        /* Fehler-Animation für das Input Feld */
-        #authOverlay input.error {
-            border-color: var(--danger);
-            background: #fef2f2;
-            animation: shake 0.4s;
-        }
+        input.error { border-color: var(--danger); background: #fef2f2; animation: shake 0.4s; }
+        #errorMsg { color: var(--danger); font-size: 0.9rem; margin-top: 10px; height: 20px; font-weight: 600; display: none; }
 
-        #errorMsg {
-            color: var(--danger);
-            font-size: 0.9rem;
-            margin-top: 10px;
-            height: 20px; /* Platzhalter damit Box nicht springt */
-            font-weight: 600;
-            display: none;
-        }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-8px); }
-            75% { transform: translateX(8px); }
-        }
-
-        #authOverlay button {
+        .btn-main {
             width: 100%; padding: 15px; font-size: 1.1rem; font-weight: bold;
             background: var(--text-main); color: white; border: none; border-radius: 15px; 
             cursor: pointer; margin-top: 20px;
         }
 
-        /* Top Bar & Header */
-        .top-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 30px; max-width: 1400px; margin-left: auto; margin-right: auto;
-        }
+        .top-bar { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; max-width: 1400px; margin-left: auto; margin-right: auto; gap: 15px; }
+        .top-row { display: flex; justify-content: space-between; width: 100%; align-items: center; }
+        .filter-bar { display: flex; gap: 10px; background: var(--glass-white); padding: 5px; border-radius: 15px; border: 1px solid var(--glass-border); backdrop-filter: blur(10px); }
+        .filter-btn { padding: 8px 20px; border: none; border-radius: 10px; background: transparent; cursor: pointer; font-weight: 700; color: #64748b; transition: 0.2s; }
+        .filter-btn.active { background: white; color: var(--accent); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .header { font-size: 1.5rem; font-weight: 800; color: #334155; margin: 0; }
-        .btn-logout {
-            background: var(--glass-white); border: 1px solid var(--glass-border);
-            padding: 8px 15px; border-radius: 12px; cursor: pointer; font-weight: 600;
-            backdrop-filter: blur(10px); color: #64748b;
-        }
+        .btn-logout { background: var(--glass-white); border: 1px solid var(--glass-border); padding: 8px 15px; border-radius: 12px; cursor: pointer; font-weight: 600; backdrop-filter: blur(10px); color: #64748b; }
 
-        /* Responsive Grid */
-        #kitchenDisplay { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
-            gap: 20px; 
-            max-width: 1400px; margin: 0 auto;
-        }
+        #kitchenDisplay { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; max-width: 1400px; margin: 0 auto; }
 
-        @media (max-width: 480px) {
-            #kitchenDisplay { grid-template-columns: 1fr; }
-            .header { font-size: 1.2rem; }
-        }
-
-        /* Tickets */
         .order-ticket { 
-            background: var(--glass-white);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            background: var(--glass-white); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             border-radius: 28px; padding: 20px; border: 1px solid var(--glass-border);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
-            display: flex; flex-direction: column; transition: all 0.3s ease;
+            display: flex; flex-direction: column; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .order-ticket.warn { background: var(--warn-glass); }
         .order-ticket.urgent { background: var(--urgent-glass); animation: pulse 2s infinite; }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.01); }
-        }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.01); } }
 
         .ticket-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .table-no { background: white; padding: 6px 14px; border-radius: 12px; font-size: 1.2rem; font-weight: 800; }
         .timer { font-family: monospace; font-size: 2rem; font-weight: 800; color: var(--accent); }
-        .product-list { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; color: #0f172a; }
+        .product-list { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; color: #0f172a; line-height: 1.2; }
         .order-info { font-size: 0.9rem; color: #64748b; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; }
-        .btn-done { margin-top: 15px; width: 100%; padding: 16px; background: #22c55e; color: white; border: none; border-radius: 18px; font-size: 1.3rem; font-weight: 800; cursor: pointer; }
+        .btn-done { margin-top: 15px; width: 100%; padding: 16px; background: var(--success); color: white; border: none; border-radius: 18px; font-size: 1.3rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .btn-done:active { transform: scale(0.95); }
         .empty-msg { text-align: center; grid-column: 1/-1; opacity: 0.5; margin-top: 50px; }
+        
+        /* Die "Weg-Animation" */
+        .ticket-exit { transform: scale(0.8); opacity: 0; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -139,13 +105,21 @@
             <h2 style="margin-top:0;">KÜCHEN-LOGIN</h2>
             <input type="password" id="passInput" placeholder="Passwort">
             <div id="errorMsg">Falsches Passwort!</div>
-            <button onclick="checkPass()">Anmelden</button>
+            <button class="btn-main" onclick="checkPass()">Anmelden</button>
         </div>
     </div>
 
     <div class="top-bar">
-        <h1 class="header">👨‍🍳 KÜCHEN-ZENTRALE</h1>
-        <button class="btn-logout" onclick="logout()">Abmelden 🔒</button>
+        <div class="top-row">
+            <h1 class="header">👨‍🍳 KÜCHEN-ZENTRALE</h1>
+            <button class="btn-logout" onclick="logout()">Abmelden 🔒</button>
+        </div>
+        
+        <div class="filter-bar">
+            <button class="filter-btn active" id="btn-all" onclick="setFilter('all')">Alles</button>
+            <button class="filter-btn" id="btn-S" onclick="setFilter('S')">🍕 Küche</button>
+            <button class="filter-btn" id="btn-G" onclick="setFilter('G')">🥤 Bar</button>
+        </div>
     </div>
 
     <div id="kitchenDisplay"></div>
@@ -157,38 +131,33 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    let currentFilter = 'all';
+    let lastSnapshot = null;
+
     function checkPass() {
         const input = document.getElementById('passInput');
         const error = document.getElementById('errorMsg');
-
         if(input.value === PASSWORT) {
             document.getElementById('authOverlay').style.display = 'none';
-            input.classList.remove('error');
-            error.style.display = 'none';
         } else {
-            // Fehler-Zustand aktivieren
             input.classList.add('error');
             error.style.display = 'block';
             input.value = "";
-            
-            // Shake-Effekt nach der Animation entfernen damit er erneut triggern kann
-            setTimeout(() => {
-                input.classList.remove('error');
-            }, 400);
+            setTimeout(() => input.classList.remove('error'), 400);
         }
     }
 
     function logout() {
         document.getElementById('passInput').value = "";
-        document.getElementById('errorMsg').style.display = 'none';
         document.getElementById('authOverlay').style.display = 'flex';
     }
 
-    document.getElementById('passInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') checkPass();
-    });
-
-    // --- RESTLICHE LOGIK ---
+    function setFilter(f) {
+        currentFilter = f;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + f).classList.add('active');
+        renderOrders(lastSnapshot);
+    }
 
     function updateCountdowns() {
         const now = Date.now();
@@ -196,12 +165,11 @@
             const start = parseInt(ticket.getAttribute('data-start'));
             const timerElement = ticket.querySelector('.timer');
             const diff = now - start;
-            const remaining = 600000 - diff;
+            const remaining = 600000 - diff; 
 
-            if (diff > 480000) ticket.className = 'order-ticket urgent';
-            else if (diff > 300000) ticket.className = 'order-ticket warn';
-            else ticket.className = 'order-ticket';
-
+            if (diff > 480000) ticket.classList.add('urgent');
+            else if (diff > 300000) ticket.classList.add('warn');
+            
             if (remaining <= 0) {
                 timerElement.innerText = "!!:!!";
             } else {
@@ -212,40 +180,115 @@
         });
     }
 
-    db.ref('kitchenOrders').on('value', snapshot => {
-        const orders = snapshot.val();
+    function renderOrders(snapshot) {
+        lastSnapshot = snapshot;
         const display = document.getElementById('kitchenDisplay');
         display.innerHTML = "";
-        if (!orders) {
+        
+        if (!snapshot || !snapshot.val()) {
             display.innerHTML = '<div class="empty-msg">Keine offenen Bestellungen...</div>';
             return;
         }
+
+        const orders = snapshot.val();
         Object.keys(orders).sort((a, b) => orders[a].timestamp - orders[b].timestamp).forEach(id => {
             const o = orders[id];
+            let displayProducts = "";
+
+            if (o.itemsList) {
+                if (currentFilter === 'S') {
+                    if (o.kitchenDone) return; 
+                    const foodItems = o.itemsList.filter(item => item.cat !== 'G');
+                    if (foodItems.length === 0) return;
+                    displayProducts = foodItems.map(i => `${i.count}x ${i.name}`).join(', ');
+                } else if (currentFilter === 'G') {
+                    if (o.barDone) return;
+                    const drinkItems = o.itemsList.filter(item => item.cat === 'G');
+                    if (drinkItems.length === 0) return;
+                    displayProducts = drinkItems.map(i => `${i.count}x ${i.name}`).join(', ');
+                } else {
+                    displayProducts = o.itemsList.map(i => `${i.count}x ${i.name}`).join(', ');
+                }
+            } else {
+                displayProducts = o.product;
+            }
+
             display.innerHTML += `
                 <div class="order-ticket" id="ticket-${id}" data-start="${o.timestamp}">
                     <div class="ticket-top">
                         <div class="table-no">TISCH ${o.table}</div>
                         <div class="timer">--:--</div>
                     </div>
-                    <div class="product-list">${o.product}</div>
+                    <div class="product-list">${displayProducts}</div>
                     <div class="order-info">
                         <span>${o.time} Uhr</span>
                         <span><b>${o.total || ""}</b></span>
                     </div>
-                    <button class="btn-done" onclick="done('${id}')">ERLEDIGT ✓</button>
+                    <button class="btn-done" onclick="executeDone('${id}')">ERLEDIGT ✓</button>
                 </div>`;
         });
         updateCountdowns();
-    });
+    }
 
+    db.ref('kitchenOrders').on('value', renderOrders);
     setInterval(updateCountdowns, 1000);
 
-    window.done = id => {
-        const el = document.getElementById('ticket-' + id);
-        if(el) { el.style.transform = "scale(0.9)"; el.style.opacity = "0"; }
-        setTimeout(() => db.ref('kitchenOrders/' + id).remove(), 250);
-    };
+    function executeDone(id) {
+        // Animation starten
+        const ticket = document.getElementById('ticket-' + id);
+        if (ticket) ticket.classList.add('ticket-exit');
+
+        // Datenbank-Update nach kurzer Verzögerung für die Animation
+        setTimeout(() => {
+            db.ref('kitchenOrders/' + id).once('value', snap => {
+                const data = snap.val();
+                if (!data) return;
+
+                let updates = {};
+                if (currentFilter === 'S') updates.kitchenDone = true;
+                else if (currentFilter === 'G') updates.barDone = true;
+                else { 
+                    updates.kitchenDone = true;
+                    updates.barDone = true;
+                }
+
+                db.ref('kitchenOrders/' + id).update(updates).then(() => {
+                    db.ref('kitchenOrders/' + id).once('value', nextSnap => {
+                        const updatedData = nextSnap.val();
+                        if (!updatedData) return;
+
+                        const hasDrinks = updatedData.itemsList ? updatedData.itemsList.some(i => i.cat === 'G') : true;
+                        const hasFood = updatedData.itemsList ? updatedData.itemsList.some(i => i.cat !== 'G') : true;
+
+                        const barReady = !hasDrinks || updatedData.barDone;
+                        const kitchenReady = !hasFood || updatedData.kitchenDone;
+
+                        if (barReady && kitchenReady) {
+                            archiveOrder(id, updatedData);
+                        }
+                    });
+                });
+            });
+        }, 300); // 300ms Zeit für die Animation
+    }
+
+    function archiveOrder(id, data) {
+        const statsData = {
+            table: data.table,
+            totalPrice: parseFloat(data.totalPrice) || 0,
+            items: data.product,
+            timestamp: Date.now()
+        };
+        db.ref('completedOrders').push(statsData);
+        data.completedAt = Date.now();
+        db.ref('history').push(data).then(() => {
+            db.ref('kitchenOrders/' + id).remove();
+        });
+    }
+
+    document.getElementById('passInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkPass();
+    });
 </script>
 </body>
 </html>
