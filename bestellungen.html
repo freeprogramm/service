@@ -63,10 +63,11 @@
             box-sizing: border-box;
         }
 
+        /* NEU EINGEFÜGT: Ausverkauft Style */
+        .sold-out { background-color: #fee2e2 !important; color: #ef4444 !important; }
+
         input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .section-title { 
@@ -97,7 +98,17 @@
             padding: 8px; border-radius: 8px; background: #fff; box-sizing: border-box;
         }
 
-        .total-row { font-size: 18px; font-weight: 700; text-align: right; margin-top: 15px; padding-top: 10px; border-top: 2px solid #e2e8f0; }
+        .tip-container {
+            margin-top: 15px; display: flex; gap: 8px; justify-content: center;
+        }
+        .btn-tip {
+            flex: 1; background: #fff; border: 1.5px solid #cbd5e1; padding: 8px; border-radius: 8px;
+            font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;
+        }
+        .btn-tip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .total-row { font-size: 18px; font-weight: 700; text-align: right; margin-top: 15px; padding-top: 10px; border-top: 2px solid #e2e8f0; line-height: 1.4; }
+        .total-row small { font-size: 14px; color: #64748b; font-weight: normal; }
 
         .btn-send {
             width: 100%; margin-top: 25px; padding: 18px; background: var(--accent);
@@ -127,7 +138,7 @@
         <h2>📝 Bestellung</h2>
         
         <div class="input-group">
-            <label id="tableLabel">Tischnummer (1 bis 30):</label>
+            <label id="tableLabel">Tischnummer:</label>
             <input type="number" id="tableNumber" placeholder="Tischnummer" oninput="this.classList.remove('error'); document.getElementById('errorText').style.display='none';">
             <div id="errorText" class="error-hint">Bitte gib eine Tischnummer ein!</div>
         </div>
@@ -145,8 +156,18 @@
         <button class="btn-add" onclick="addToBasket('selectNachspeisen')">+ Hinzufügen</button>
 
         <div id="basket">
-            <div class="basket-header">Dein Warenkorb:</div>
+            <div style="font-weight: 700; margin-bottom: 10px;">Dein Warenkorb:</div>
             <div id="basketList"><span>Noch leer.</span></div>
+            
+            <div id="tipBox" style="display: none; margin-top: 15px;">
+                <div style="font-size: 12px; font-weight: bold; color: var(--primary); text-align: center;">TRINKGELD GEBEN:</div>
+                <div class="tip-container">
+                    <button class="btn-tip active" id="tip0" onclick="setTip(0)">0%</button>
+                    <button class="btn-tip" id="tip5" onclick="setTip(5)">5%</button>
+                    <button class="btn-tip" id="tip10" onclick="setTip(10)">10%</button>
+                </div>
+            </div>
+
             <div id="totalDisplay"></div>
             <button class="btn-clear" onclick="clearBasket()">Warenkorb leeren</button>
         </div>
@@ -164,7 +185,9 @@
     
     let currentBasket = {}; 
     let menuPrices = {};
+    let menuCats = {}; 
     let maxTables = 30;
+    let currentTipPercent = 0;
 
     db.ref('settings/tableCount').on('value', (s) => {
         if(s.exists()) {
@@ -180,10 +203,24 @@
         sG.innerHTML = sS.innerHTML = sN.innerHTML = '<option value="" disabled selected>Wählen.</option>';
         if (menu) {
             Object.values(menu).forEach(item => {
+                // EINGEFÜGT: Status Abfrage
+                const isAvailable = item.available !== false;
+                
                 menuPrices[item.name] = item.price || "0.00";
+                menuCats[item.name] = item.cat || "S";
+                
                 let opt = document.createElement('option');
                 opt.value = item.name;
-                opt.text = `${item.name} (${parseFloat(item.price).toFixed(2)}€)`;
+                
+                // NEU: Deaktivieren wenn ausverkauft
+                if (!isAvailable) {
+                    opt.text = `${item.name} - AUSVERKAUFT`;
+                    opt.disabled = true;
+                    opt.className = "sold-out";
+                } else {
+                    opt.text = `${item.name} (${parseFloat(item.price).toFixed(2)}€)`;
+                }
+
                 if(item.cat === "G") sG.appendChild(opt); 
                 else if(item.cat === "N") sN.appendChild(opt); 
                 else sS.appendChild(opt);
@@ -191,14 +228,24 @@
         }
     });
 
+    function setTip(val) {
+        currentTipPercent = val;
+        document.querySelectorAll('.btn-tip').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('tip' + val).classList.add('active');
+        updateUI();
+    }
+
     function addToBasket(id) {
-        const val = document.getElementById(id).value;
+        const select = document.getElementById(id);
+        const val = select.value;
         if (!val) return;
+        
         if (!currentBasket[val]) {
             currentBasket[val] = { qty: 1, note: "" };
         } else {
             currentBasket[val].qty += 1;
         }
+        select.selectedIndex = 0; 
         updateUI();
     }
 
@@ -215,16 +262,20 @@
     function updateUI() {
         const l = document.getElementById('basketList'), keys = Object.keys(currentBasket);
         const t = document.getElementById('totalDisplay');
-        let totalSum = 0;
+        const tipBox = document.getElementById('tipBox');
+        let subtotal = 0;
+
         if (!keys.length) {
             l.innerHTML = '<span>Noch leer.</span>';
             t.innerHTML = "";
+            tipBox.style.display = 'none';
             return;
         }
+
+        tipBox.style.display = 'block';
         l.innerHTML = keys.map(n => {
             let itemPrice = parseFloat(menuPrices[n]) || 0;
-            let subtotal = itemPrice * currentBasket[n].qty;
-            totalSum += subtotal;
+            subtotal += itemPrice * currentBasket[n].qty;
             return `
             <div class="basket-item-container">
                 <div class="basket-item">
@@ -235,15 +286,30 @@
                         <button class="btn-qty" onclick="changeQty('${n}',1)">+</button>
                     </div>
                 </div>
-                <input type="text" class="item-note" placeholder="Zusatzwunsch (z.B. ohne Zwiebeln)" 
+                <input type="text" class="item-note" placeholder="Zusatzwunsch..." 
                        value="${currentBasket[n].note}" 
                        oninput="updateNote('${n}', this.value)">
             </div>`;
         }).join("");
-        t.innerHTML = `<div class="total-row">Gesamt: ${totalSum.toFixed(2)} €</div>`;
+
+        let tipAmount = subtotal * (currentTipPercent / 100);
+        let finalTotal = subtotal + tipAmount;
+
+        t.innerHTML = `
+            <div class="total-row">
+                <small>Zwischensumme: ${subtotal.toFixed(2)} €</small><br>
+                <small>Trinkgeld (${currentTipPercent}%): ${tipAmount.toFixed(2)} €</small><br>
+                Gesamt: ${finalTotal.toFixed(2)} €
+            </div>`;
     }
 
-    function clearBasket() { currentBasket = {}; updateUI(); }
+    function clearBasket() { 
+        currentBasket = {}; 
+        currentTipPercent = 0; 
+        document.querySelectorAll('.btn-tip').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('tip0').classList.add('active');
+        updateUI(); 
+    }
 
     function sendOrder() {
         const tableInput = document.getElementById('tableNumber');
@@ -259,20 +325,43 @@
 
         if (!items.length) return alert("Dein Warenkorb ist leer!");
 
-        let totalOrderSum = 0;
-        const productList = items.map(n => {
+        let subtotal = 0;
+        let categoriesFound = [];
+        let itemsListForKitchen = []; 
+
+        const productSummary = items.map(n => {
             let price = parseFloat(menuPrices[n]) || 0;
-            totalOrderSum += price * currentBasket[n].qty;
-            let noteContent = currentBasket[n].note ? ` (${currentBasket[n].note})` : "";
-            return `${currentBasket[n].qty}x ${n}${noteContent}`;
+            let qty = currentBasket[n].qty;
+            let cat = menuCats[n];
+            let note = currentBasket[n].note;
+
+            subtotal += price * qty;
+            if(!categoriesFound.includes(cat)) categoriesFound.push(cat);
+
+            itemsListForKitchen.push({
+                name: n,
+                count: qty,
+                cat: cat,
+                note: note
+            });
+
+            let noteContent = note ? ` (${note})` : "";
+            return `${qty}x ${n}${noteContent}`;
         }).join(", ");
 
+        let tipAmount = subtotal * (currentTipPercent / 100);
+        let finalTotalValue = (subtotal + tipAmount).toFixed(2);
+
         db.ref('kitchenOrders').push({
-            product: productList,
-            total: totalOrderSum.toFixed(2) + " €",
+            product: productSummary, 
+            itemsList: itemsListForKitchen, 
+            total: finalTotalValue + " €",
+            totalPrice: finalTotalValue,
             table: table,
             time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            status: "new",
+            categories: categoriesFound 
         }).then(() => { 
             clearBasket(); 
             tableInput.value = "";
