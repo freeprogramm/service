@@ -94,7 +94,6 @@
         .btn-done:active { transform: scale(0.95); }
         .empty-msg { text-align: center; grid-column: 1/-1; opacity: 0.5; margin-top: 50px; }
         
-        /* Die "Weg-Animation" */
         .ticket-exit { transform: scale(0.8); opacity: 0; pointer-events: none; }
     </style>
 </head>
@@ -119,6 +118,7 @@
             <button class="filter-btn active" id="btn-all" onclick="setFilter('all')">Alles</button>
             <button class="filter-btn" id="btn-S" onclick="setFilter('S')">🍕 Küche</button>
             <button class="filter-btn" id="btn-G" onclick="setFilter('G')">🥤 Bar</button>
+            <button class="filter-btn" id="btn-N" onclick="setFilter('N')">🍰 Nachspeisen</button>
         </div>
     </div>
 
@@ -198,7 +198,7 @@
             if (o.itemsList) {
                 if (currentFilter === 'S') {
                     if (o.kitchenDone) return; 
-                    const foodItems = o.itemsList.filter(item => item.cat !== 'G');
+                    const foodItems = o.itemsList.filter(item => item.cat !== 'G' && item.cat !== 'N');
                     if (foodItems.length === 0) return;
                     displayProducts = foodItems.map(i => `${i.count}x ${i.name}`).join(', ');
                 } else if (currentFilter === 'G') {
@@ -206,6 +206,11 @@
                     const drinkItems = o.itemsList.filter(item => item.cat === 'G');
                     if (drinkItems.length === 0) return;
                     displayProducts = drinkItems.map(i => `${i.count}x ${i.name}`).join(', ');
+                } else if (currentFilter === 'N') {
+                    if (o.dessertDone) return;
+                    const dessertItems = o.itemsList.filter(item => item.cat === 'N');
+                    if (dessertItems.length === 0) return;
+                    displayProducts = dessertItems.map(i => `${i.count}x ${i.name}`).join(', ');
                 } else {
                     displayProducts = o.itemsList.map(i => `${i.count}x ${i.name}`).join(', ');
                 }
@@ -234,49 +239,54 @@
     setInterval(updateCountdowns, 1000);
 
     function executeDone(id) {
-        // Animation starten
         const ticket = document.getElementById('ticket-' + id);
         if (ticket) ticket.classList.add('ticket-exit');
 
-        // Datenbank-Update nach kurzer Verzögerung für die Animation
         setTimeout(() => {
-            db.ref('kitchenOrders/' + id).once('value', snap => {
+            const orderRef = db.ref('kitchenOrders/' + id);
+            orderRef.once('value', snap => {
                 const data = snap.val();
                 if (!data) return;
 
                 let updates = {};
                 if (currentFilter === 'S') updates.kitchenDone = true;
                 else if (currentFilter === 'G') updates.barDone = true;
+                else if (currentFilter === 'N') updates.dessertDone = true;
                 else { 
                     updates.kitchenDone = true;
                     updates.barDone = true;
+                    updates.dessertDone = true;
                 }
 
-                db.ref('kitchenOrders/' + id).update(updates).then(() => {
-                    db.ref('kitchenOrders/' + id).once('value', nextSnap => {
+                orderRef.update(updates).then(() => {
+                    orderRef.once('value', nextSnap => {
                         const updatedData = nextSnap.val();
                         if (!updatedData) return;
 
-                        const hasDrinks = updatedData.itemsList ? updatedData.itemsList.some(i => i.cat === 'G') : true;
-                        const hasFood = updatedData.itemsList ? updatedData.itemsList.some(i => i.cat !== 'G') : true;
+                        const hasDrinks = updatedData.itemsList ? updatedData.itemsList.some(i => i.cat === 'G') : false;
+                        const hasDessert = updatedData.itemsList ? updatedData.itemsList.some(i => i.cat === 'N') : false;
+                        const hasFood = updatedData.itemsList ? updatedData.itemsList.some(i => i.cat !== 'G' && i.cat !== 'N') : true;
 
                         const barReady = !hasDrinks || updatedData.barDone;
                         const kitchenReady = !hasFood || updatedData.kitchenDone;
+                        const dessertReady = !hasDessert || updatedData.dessertDone;
 
-                        if (barReady && kitchenReady) {
+                        if (barReady && kitchenReady && dessertReady) {
                             archiveOrder(id, updatedData);
+                        } else {
+                            renderOrders(lastSnapshot);
                         }
                     });
                 });
             });
-        }, 300); // 300ms Zeit für die Animation
+        }, 300);
     }
 
     function archiveOrder(id, data) {
         const statsData = {
             table: data.table,
-            totalPrice: parseFloat(data.totalPrice) || 0,
-            items: data.product,
+            totalPrice: parseFloat(data.total) || 0,
+            items: data.product || (data.itemsList ? data.itemsList.map(i => i.name).join(', ') : "Keine Details"),
             timestamp: Date.now()
         };
         db.ref('completedOrders').push(statsData);
