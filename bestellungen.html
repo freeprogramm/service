@@ -9,13 +9,13 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --bg-gradient: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+            --primary: #22c55e; 
+            --primary-hover: #16a34a;
+            --bg-gradient: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
             --glass-bg: rgba(255, 255, 255, 0.9);
             --input-bg: #ffffff;
             --text-main: #1e293b;
-            --accent: #22c55e;
+            --accent: #16a34a;
             --danger: #ef4444;
         }
 
@@ -63,11 +63,10 @@
             box-sizing: border-box;
         }
 
-        /* NEU EINGEFÜGT: Ausverkauft Style */
         .sold-out { background-color: #fee2e2 !important; color: #ef4444 !important; }
 
         input:focus, select:focus {
-            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
         }
 
         .section-title { 
@@ -99,13 +98,29 @@
         }
 
         .tip-container {
-            margin-top: 15px; display: flex; gap: 8px; justify-content: center;
+            margin-top: 15px; display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;
         }
         .btn-tip {
-            flex: 1; background: #fff; border: 1.5px solid #cbd5e1; padding: 8px; border-radius: 8px;
-            font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;
+            flex: 1; min-width: 50px; background: #fff; border: 1.5px solid #cbd5e1; padding: 8px; border-radius: 8px;
+            font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.2s;
         }
         .btn-tip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Eigenes Trinkgeld Feld - Erweitert */
+        .custom-tip-wrapper {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .custom-input-box { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .custom-input-box label { font-size: 10px; margin: 0; color: #64748b; }
+        .custom-input-box input { width: 70px; text-align: center; padding: 6px; font-size: 14px; }
 
         .total-row { font-size: 18px; font-weight: 700; text-align: right; margin-top: 15px; padding-top: 10px; border-top: 2px solid #e2e8f0; line-height: 1.4; }
         .total-row small { font-size: 14px; color: #64748b; font-weight: normal; }
@@ -128,7 +143,6 @@
         
         input.error { border-color: var(--danger); background: #fff1f2; animation: shake 0.4s ease-in-out; }
         .error-hint { color: var(--danger); font-size: 12px; font-weight: bold; margin-top: 5px; display: none; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
     </style>
 </head>
 <body>
@@ -139,7 +153,7 @@
         
         <div class="input-group">
             <label id="tableLabel">Tischnummer:</label>
-            <input type="number" id="tableNumber" placeholder="Tischnummer" oninput="this.classList.remove('error'); document.getElementById('errorText').style.display='none';">
+            <input type="number" id="tableNumber" placeholder="Tischnummer">
             <div id="errorText" class="error-hint">Bitte gib eine Tischnummer ein!</div>
         </div>
 
@@ -160,11 +174,24 @@
             <div id="basketList"><span>Noch leer.</span></div>
             
             <div id="tipBox" style="display: none; margin-top: 15px;">
-                <div style="font-size: 12px; font-weight: bold; color: var(--primary); text-align: center;">TRINKGELD GEBEN:</div>
+                <div style="font-size: 12px; font-weight: bold; color: var(--primary); text-align: center;">TRINKGELD:</div>
                 <div class="tip-container">
                     <button class="btn-tip active" id="tip0" onclick="setTip(0)">0%</button>
                     <button class="btn-tip" id="tip5" onclick="setTip(5)">5%</button>
                     <button class="btn-tip" id="tip10" onclick="setTip(10)">10%</button>
+                    <button class="btn-tip" id="tip20" onclick="setTip(20)">20%</button>
+                </div>
+                
+                <div class="custom-tip-wrapper">
+                    <div class="custom-input-box">
+                        <label>Eigene %</label>
+                        <input type="number" id="customTipPercent" placeholder="%" oninput="calcTipFromPercent(this.value)">
+                    </div>
+                    <div style="font-weight: bold; color: #cbd5e1; margin-top: 12px;">oder</div>
+                    <div class="custom-input-box">
+                        <label>Eigener Betrag €</label>
+                        <input type="number" id="customTipEuro" placeholder="€" step="0.10" oninput="calcTipFromEuro(this.value)">
+                    </div>
                 </div>
             </div>
 
@@ -187,7 +214,11 @@
     let menuPrices = {};
     let menuCats = {}; 
     let maxTables = 30;
-    let currentTipPercent = 0;
+    
+    // Trinkgeld Logik
+    let subtotalValue = 0;
+    let finalTipAmount = 0;
+    let tipTypeLabel = "0%";
 
     db.ref('settings/tableCount').on('value', (s) => {
         if(s.exists()) {
@@ -203,16 +234,11 @@
         sG.innerHTML = sS.innerHTML = sN.innerHTML = '<option value="" disabled selected>Wählen.</option>';
         if (menu) {
             Object.values(menu).forEach(item => {
-                // EINGEFÜGT: Status Abfrage
                 const isAvailable = item.available !== false;
-                
                 menuPrices[item.name] = item.price || "0.00";
                 menuCats[item.name] = item.cat || "S";
-                
                 let opt = document.createElement('option');
                 opt.value = item.name;
-                
-                // NEU: Deaktivieren wenn ausverkauft
                 if (!isAvailable) {
                     opt.text = `${item.name} - AUSVERKAUFT`;
                     opt.disabled = true;
@@ -220,7 +246,6 @@
                 } else {
                     opt.text = `${item.name} (${parseFloat(item.price).toFixed(2)}€)`;
                 }
-
                 if(item.cat === "G") sG.appendChild(opt); 
                 else if(item.cat === "N") sN.appendChild(opt); 
                 else sS.appendChild(opt);
@@ -229,9 +254,34 @@
     });
 
     function setTip(val) {
-        currentTipPercent = val;
         document.querySelectorAll('.btn-tip').forEach(btn => btn.classList.remove('active'));
         document.getElementById('tip' + val).classList.add('active');
+        document.getElementById('customTipPercent').value = "";
+        document.getElementById('customTipEuro').value = "";
+        
+        finalTipAmount = subtotalValue * (val / 100);
+        tipTypeLabel = val + "%";
+        updateUI();
+    }
+
+    function calcTipFromPercent(val) {
+        const p = parseFloat(val) || 0;
+        document.querySelectorAll('.btn-tip').forEach(btn => btn.classList.remove('active'));
+        
+        finalTipAmount = subtotalValue * (p / 100);
+        document.getElementById('customTipEuro').value = finalTipAmount.toFixed(2);
+        tipTypeLabel = p + "%";
+        updateUI();
+    }
+
+    function calcTipFromEuro(val) {
+        const euro = parseFloat(val) || 0;
+        document.querySelectorAll('.btn-tip').forEach(btn => btn.classList.remove('active'));
+        
+        finalTipAmount = euro;
+        const p = subtotalValue > 0 ? (euro / subtotalValue) * 100 : 0;
+        document.getElementById('customTipPercent').value = p.toFixed(1);
+        tipTypeLabel = "Indiv.";
         updateUI();
     }
 
@@ -239,12 +289,8 @@
         const select = document.getElementById(id);
         const val = select.value;
         if (!val) return;
-        
-        if (!currentBasket[val]) {
-            currentBasket[val] = { qty: 1, note: "" };
-        } else {
-            currentBasket[val].qty += 1;
-        }
+        if (!currentBasket[val]) currentBasket[val] = { qty: 1, note: "" };
+        else currentBasket[val].qty += 1;
         select.selectedIndex = 0; 
         updateUI();
     }
@@ -263,7 +309,8 @@
         const l = document.getElementById('basketList'), keys = Object.keys(currentBasket);
         const t = document.getElementById('totalDisplay');
         const tipBox = document.getElementById('tipBox');
-        let subtotal = 0;
+        
+        subtotalValue = 0;
 
         if (!keys.length) {
             l.innerHTML = '<span>Noch leer.</span>';
@@ -275,7 +322,7 @@
         tipBox.style.display = 'block';
         l.innerHTML = keys.map(n => {
             let itemPrice = parseFloat(menuPrices[n]) || 0;
-            subtotal += itemPrice * currentBasket[n].qty;
+            subtotalValue += itemPrice * currentBasket[n].qty;
             return `
             <div class="basket-item-container">
                 <div class="basket-item">
@@ -292,20 +339,29 @@
             </div>`;
         }).join("");
 
-        let tipAmount = subtotal * (currentTipPercent / 100);
-        let finalTotal = subtotal + tipAmount;
+        // Falls ein fester Button aktiv war, Betrag neu berechnen
+        const activeBtn = document.querySelector('.btn-tip.active');
+        if(activeBtn) {
+            const val = parseInt(activeBtn.innerText);
+            finalTipAmount = subtotalValue * (val / 100);
+            tipTypeLabel = val + "%";
+        }
+
+        let finalTotal = subtotalValue + finalTipAmount;
 
         t.innerHTML = `
             <div class="total-row">
-                <small>Zwischensumme: ${subtotal.toFixed(2)} €</small><br>
-                <small>Trinkgeld (${currentTipPercent}%): ${tipAmount.toFixed(2)} €</small><br>
+                <small>Zwischensumme: ${subtotalValue.toFixed(2)} €</small><br>
+                <small>Trinkgeld (${tipTypeLabel}): ${finalTipAmount.toFixed(2)} €</small><br>
                 Gesamt: ${finalTotal.toFixed(2)} €
             </div>`;
     }
 
     function clearBasket() { 
         currentBasket = {}; 
-        currentTipPercent = 0; 
+        finalTipAmount = 0;
+        document.getElementById('customTipPercent').value = "";
+        document.getElementById('customTipEuro').value = "";
         document.querySelectorAll('.btn-tip').forEach(btn => btn.classList.remove('active'));
         document.getElementById('tip0').classList.add('active');
         updateUI(); 
@@ -319,44 +375,30 @@
         if (!table || table < 1 || table > maxTables) {
             tableInput.classList.add('error');
             document.getElementById('errorText').style.display = 'block';
-            tableInput.focus();
             return;
         }
 
-        if (!items.length) return alert("Dein Warenkorb ist leer!");
+        if (!items.length) return alert("Warenkorb leer!");
 
-        let subtotal = 0;
         let categoriesFound = [];
         let itemsListForKitchen = []; 
 
         const productSummary = items.map(n => {
-            let price = parseFloat(menuPrices[n]) || 0;
             let qty = currentBasket[n].qty;
             let cat = menuCats[n];
             let note = currentBasket[n].note;
-
-            subtotal += price * qty;
             if(!categoriesFound.includes(cat)) categoriesFound.push(cat);
-
-            itemsListForKitchen.push({
-                name: n,
-                count: qty,
-                cat: cat,
-                note: note
-            });
-
-            let noteContent = note ? ` (${note})` : "";
-            return `${qty}x ${n}${noteContent}`;
+            itemsListForKitchen.push({ name: n, count: qty, cat: cat, note: note });
+            return `${qty}x ${n}${note ? ' ('+note+')' : ''}`;
         }).join(", ");
 
-        let tipAmount = subtotal * (currentTipPercent / 100);
-        let finalTotalValue = (subtotal + tipAmount).toFixed(2);
+        let finalTotalStr = (subtotalValue + finalTipAmount).toFixed(2);
 
         db.ref('kitchenOrders').push({
             product: productSummary, 
             itemsList: itemsListForKitchen, 
-            total: finalTotalValue + " €",
-            totalPrice: finalTotalValue,
+            total: finalTotalStr + " €",
+            totalPrice: finalTotalStr,
             table: table,
             time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
             timestamp: Date.now(),
